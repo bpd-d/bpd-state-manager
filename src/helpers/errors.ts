@@ -24,3 +24,15 @@ export class PerformerError extends ErrorBase {
         this.stack = base.stack;
     }
 }
+
+export class CreateStateError extends ErrorBase {
+    constructor(message?: string) {
+        super("CreateStateError", message);
+    }
+}
+
+export class InitStateError extends ErrorBase {
+    constructor(message?: string) {
+        super("InitStateError", message);
+    }
+}

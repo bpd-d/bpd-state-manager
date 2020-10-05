@@ -80,4 +80,17 @@ describe("Tests checking [Subscriptions]", function () {
         let count = subManager.getSubscribers().length;
         expect(count).toEqual(1);
     })
+
+    it("Notify - one timer", async function () {
+        let subManager: ISubscriptionsManager<string> = new SubscriptionsManager("Xx");
+        let simpleSub = new SimpleSubscriber();
+        let id = subManager.subscribe(simpleSub.onNotify.bind(simpleSub), {
+            singleRun: true
+        });
+        subManager.notify("XXX");
+        await sleep(50);
+        let count = subManager.getSubscribers().length;
+        expect(count).toEqual(0);
+        expect(simpleSub.value).toEqual("XXX");
+    })
 })
