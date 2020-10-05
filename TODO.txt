@@ -1,0 +1,13 @@
+Ideas:
+
+* Define an object with actions:
+  interface {
+      [action: string]: Action
+  }
+
+* Define performer function - it manages state 
+  Performer (state, action) => state
+
+* Getter: function executed on State update
+
+* Initialize method accepts initial state
