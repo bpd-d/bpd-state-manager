@@ -10,3 +10,13 @@ export function is(obj: any) {
     }
     return true;
 }
+
+export function* counter() {
+    let idx = 0;
+    while (true) {
+        let reset = yield idx++;
+        if (reset || idx > 200000) {
+            idx = 0
+        }
+    }
+}
