@@ -1,5 +1,5 @@
-import { BpdStateAction } from "../src";
-import { BpdStateWorker, IBpdStateWorker } from "../src/worker";
+import { BpdStateAction } from "../src/interfaces";
+import { IBpdStateWorker, BpdStateWorker } from "../src/worker/worker";
 import { getSimpleAction } from "./helpers/actions";
 import { sleep } from "./helpers/functions";
 import { ErrorPerformer, LongPerformer, SimplePerformer } from "./helpers/performers";
@@ -55,7 +55,7 @@ describe("Tests checking [Worker]", function () {
         let worker: IBpdStateWorker<String, string> = undefined;
         worker = new BpdStateWorker<string, string>();
         worker.onPerform(performer.perform.bind(performer));
-        worker.onUpdate((action: BpdStateAction<string>, res: string) => {
+        worker.onUpdate((res: string, action: BpdStateAction<string>,) => {
             result = res;
         });
         worker.perform(action);
@@ -72,10 +72,10 @@ describe("Tests checking [Worker]", function () {
         let error = "";
         worker = new BpdStateWorker<string, string>();
         worker.onPerform(performer.perform.bind(performer));
-        worker.onUpdate((action: BpdStateAction<string>, res: string) => {
+        worker.onUpdate((res: string, action: BpdStateAction<string>,) => {
             result = res;
         });
-        worker.onError((action, e) => {
+        worker.onError((e, action) => {
             error = e.message;
         })
         worker.perform(action);

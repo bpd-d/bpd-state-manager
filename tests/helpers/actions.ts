@@ -1,4 +1,5 @@
-import { BpdStateAction } from "../../src/index";
+import { BpdStateAction } from "../../src/interfaces";
+
 
 export function getSimpleAction(): BpdStateAction<string> {
     return {

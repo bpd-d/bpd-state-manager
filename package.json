@@ -1,6 +1,6 @@
 {
   "name": "bpd-state-manager",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Simple state management library",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
@@ -11,7 +11,19 @@
     "/dist/index.min.js.map",
     "/dist/index.d.ts",
     "/dist/esm/index.js",
-    "/dist/esm/index.d.ts"
+    "/dist/esm/index.d.ts",
+    "/dist/esm/interfaces.js",
+    "/dist/esm/interfaces.d.ts",
+    "/dist/esm/helpers/errors.js",
+    "/dist/esm/helpers/errors.d.ts",
+    "/dist/esm/helpers/functions.js",
+    "/dist/esm/helpers/functions.d.ts",
+    "/dist/esm/state/state.js",
+    "/dist/esm/state/state.d.ts",
+    "/dist/esm/subscriptions/subscriptions.js",
+    "/dist/esm/subscriptions/subscriptions.d.ts",
+    "/dist/esm/worker/worker.js",
+    "/dist/esm/worker/worker.d.ts"
   ],
   "scripts": {
     "build": "webpack --config webpack.production.js",

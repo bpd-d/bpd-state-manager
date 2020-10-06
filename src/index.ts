@@ -1,156 +1,17 @@
-import { CreateStateError, IncorrectDataError, InitStateError } from "./helpers/errors";
-import { counter, is } from "./helpers/functions";
-import { ISubscriptionsManager, SubscriptionsManager } from "./subscriptions/subscriptions";
-import { BpdStateWorker, IBpdStateWorker } from "./worker";
+import { CommonError, CreateStateError, StateManagerShorthandError } from "./helpers/errors";
+import { is } from "./helpers/functions";
+import { BpdStateManagerConfig, StatePerformer, BpdStateAction, BpdManagedStates } from "./interfaces";
+import { BpdState, IBpdState } from "./state/state";
 
-export const VERSION_INFO = "0.1.0";
-
-export type OnChangeEventType = "action" | "lib";
-
-export interface BpdStateOnChange<V> {
-    (stateId: string, type: OnChangeEventType, detail: string, state: V): void;
-}
-
-export interface BpdStateOnError {
-    (stateId: string, type: OnChangeEventType, error: Error, detail: string): void;
-}
-
-export interface BpdStateAction<T> {
-    action: string;
-    data: T;
-}
-
-export interface StateManager<V> {
-    [stateId: string]: V;
-}
-
-export interface BpdStateManagerConfig<V> {
-    onChange?: BpdStateOnChange<V>;
-    onError?: BpdStateOnError;
-}
-
-export interface StatePerformer<V, P> {
-    (state: P, action: BpdStateAction<V>): P;
-}
-
-export interface BpdManagedStates<VStates, TActions> {
-    [id: string]: IBpdState<VStates, TActions>;
-}
-
-export interface IBpdState<VState, PAction> {
-    perform(action: BpdStateAction<PAction>, callback?: (state: VState) => void): void;
-    subscribe(callback: (state: VState) => void): string;
-    unsubscribe(id: string): boolean;
-    getState(): VState;
-}
-
-export class BpdState<VState, PAction> implements IBpdState<VState, PAction> {
-    #state: VState;
-    #id: string;
-    #config: BpdStateManagerConfig<VState>;
-    #worker: IBpdStateWorker<PAction, VState>;
-    #performer: StatePerformer<PAction, VState>;
-    #subscriptionManager: ISubscriptionsManager<VState>;
-
-    constructor(id: string, init: VState, performer: StatePerformer<PAction, VState>, config?: BpdStateManagerConfig<VState>) {
-        if (!is(id)) {
-            throw new InitStateError("State id must be provided")
-        }
-        if (!is(init)) {
-            throw new InitStateError("Initial value must be a valid, initialized object")
-        }
-        if (!is(performer)) {
-            throw new InitStateError("Perfromer callback was not provided")
-        }
-        this.#id = id;
-        this.#state = init;
-        this.#config = config ?? {};
-        this.#performer = performer;
-        this.#worker = new BpdStateWorker<PAction, VState>();
-        this.#worker.onUpdate(this.onWorkerChange.bind(this))
-        this.#worker.onPerform(this.onWorkerPerform.bind(this));
-        this.#worker.onError(this.onWorkerError.bind(this));
-        this.#subscriptionManager = new SubscriptionsManager(this.#id);
-        this.#subscriptionManager.onError(this.onSubscriberError.bind(this));
+export const VERSION_INFO = "0.1.1";
+declare global {
+    interface Window {
+        $bdpStateManager: any;
     }
-
-    perform(action: BpdStateAction<PAction>, callback?: (state: VState) => void) {
-        if (!is(action)) {
-            this.reportError("lib", "In proper action object", new IncorrectDataError("In proper action object"))
-        }
-        if (is(callback)) {
-            this.#subscriptionManager.subscribe(callback, {
-                singleRun: true
-            })
-        }
-        this.#worker.perform(action);
-    }
-
-    subscribe(callback: (state: VState) => void): string {
-        if (!is(callback)) {
-            this.reportError("lib", "", new IncorrectDataError("Callback has not been set"))
-            return undefined;
-        }
-        return this.#subscriptionManager.subscribe(callback)
-    }
-
-    unsubscribe(id: string): boolean {
-        if (!is(id)) {
-            return false;
-        }
-        this.#subscriptionManager.unsubscribe(id);
-        return true;
-    }
-
-    getState(): VState {
-        return this.#state;
-    }
-
-    private onWorkerChange(action: BpdStateAction<PAction>, state: VState) {
-        if (['number', 'string', 'boolean'].includes(typeof state) || Array.isArray(state)) {
-            this.#state = state;
-        } else {
-            this.#state = { ...state };
-        }
-        this.#subscriptionManager.notify(state)
-            .then((result) => {
-                this.reportChange('action', action.action)
-            })
-            .catch(e => {
-                this.reportError("action", action.action, e)
-            })
-    }
-
-    private onWorkerPerform(action: BpdStateAction<PAction>) {
-        return new Promise<VState>((resolve) => {
-            resolve(this.#performer(this.#state, action));
-        })
-    }
-
-    private onWorkerError(action: BpdStateAction<PAction>, e: Error): void {
-        this.reportError('action', action.action, e);
-    }
-
-    private onSubscriberError(e: Error) {
-        this.reportError('lib', "Subscribers error", e);
-    }
-
-    private reportError(type: OnChangeEventType, detail: string, e: Error) {
-        if (is(this.#config.onError)) {
-            this.#config.onError(this.#id, type, e, detail)
-        }
-    }
-
-    private reportChange(type: OnChangeEventType, detail: string) {
-        if (is(this.#config.onChange)) {
-            this.#config.onChange(this.#id, type, detail, this.#state)
-        }
-    }
-
 }
 
 export class BpdStateManager<VStates, TActions> {
-    #config: BpdStateManagerConfig<VStates>;
+    #config: BpdStateManagerConfig<VStates> | undefined;
     #states: BpdManagedStates<VStates, TActions>;
     constructor(config?: BpdStateManagerConfig<VStates>) {
         this.#config = config;
@@ -165,25 +26,95 @@ export class BpdStateManager<VStates, TActions> {
     }
 
     removeState(name: string) {
-        let state = this.#states[name];
-        if (is(state)) {
+        this.executeIfValid(name, "Perform", (state) => {
             delete this.#states[name];
-        }
+        })
     }
 
-    getState(name: string) {
-        return this.#states[name]?.getState();
+    getState(name: string): IBpdState<VStates, TActions> | undefined {
+        let resultState = undefined;
+        this.executeIfValid(name, "Perform", (state) => {
+            resultState = state;
+        })
+        return resultState;
     }
 
     perform(name: string, action: BpdStateAction<TActions>, callback?: (state: VStates) => void) {
-        this.#states[name]?.perform(action, callback);
+        this.executeIfValid(name, "Perform", (state) => {
+            state.perform(action, callback);
+        })
     }
 
-    subscribe(name: string, callback: (state: VStates) => void): string {
-        return this.#states[name]?.subscribe(callback);
+    subscribe(name: string, callback: (state: VStates) => void): string | undefined {
+        let id = undefined;
+        this.executeIfValid(name, "Subscribe", (state) => {
+            id = state.subscribe(callback);
+        })
+        return id;
     }
 
     unsubscribe(name: string, id: string) {
-        this.#states[name]?.unsubscribe(id);
+        this.executeIfValid(name, "Unsubscribe", (state) => {
+            state.unsubscribe(id);
+        })
+    }
+
+    private executeIfValid(name: string, methodName: string, callback: (state: IBpdState<VStates, TActions>) => void) {
+        if (!is(name)) {
+            throw new CommonError(methodName + "Error", "State name is not provided")
+        }
+        let state = this.#states[name];
+        if (!is(state)) {
+            throw new CommonError(methodName + "StateError", "State not found")
+        }
+        callback(state);
     }
 }
+
+
+export function createStateManager<VStates, TActions>(config?: BpdStateManagerConfig<VStates>): void {
+    window.$bdpStateManager = new BpdStateManager<VStates, TActions>(config);
+}
+
+export function createState<VStates, TActions>(name: string, initialValue: VStates, performer: StatePerformer<TActions, VStates>, config?: BpdStateManagerConfig<VStates>): void {
+    if (!is(window.$bdpStateManager)) {
+        throw new StateManagerShorthandError("createState", "Manager must be initialized first with createStateManager")
+    }
+    window.$bdpStateManager.createState(name, initialValue, performer, config);
+}
+
+export function removeState<VStates, TActions>(name: string): void {
+    if (!is(window.$bdpStateManager)) {
+        throw new StateManagerShorthandError("removeState", "Manager must be initialized first with createStateManager")
+    }
+    window.$bdpStateManager.removeState(name);
+}
+
+export function getState<VStates, TActions>(name: string): IBpdState<VStates, TActions> {
+    if (!is(window.$bdpStateManager)) {
+        throw new StateManagerShorthandError("getState", "Manager must be initialized first with createStateManager")
+    }
+    return window.$bdpStateManager.getState(name);
+}
+
+export function perform<VStates, TActions>(name: string, action: BpdStateAction<TActions>, callback?: (state: VStates) => void) {
+    if (!is(window.$bdpStateManager)) {
+        throw new StateManagerShorthandError("perform", "Manager must be initialized first with createStateManager")
+    }
+    window.$bdpStateManager.perform(name, action, callback);
+}
+
+export function subscribe<VStates, TActions>(name: string, callback: (state: VStates) => void): string {
+    if (!is(window.$bdpStateManager)) {
+        throw new StateManagerShorthandError("subscribe", "Manager must be initialized first with createStateManager")
+    }
+    return window.$bdpStateManager.subscribe(name, callback);
+}
+
+export function unsubscribe<VStates, TActions>(name: string, id: string) {
+    if (!is(window.$bdpStateManager)) {
+        throw new StateManagerShorthandError("unsubscribe", "Manager must be initialized first with createStateManager")
+    }
+    window.$bdpStateManager.unsubscribe(name, id);
+}
+

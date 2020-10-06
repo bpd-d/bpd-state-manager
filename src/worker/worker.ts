@@ -1,17 +1,17 @@
-import { IncorrectDataError, PerformerError, WorkerNotReadyError } from "./helpers/errors";
-import { is } from "./helpers/functions";
-import { BpdStateAction } from "./index";
+import { IncorrectDataError, WorkerNotReadyError } from "../helpers/errors";
+import { is } from "../helpers/functions";
+import { BpdStateAction } from "../interfaces";
 
 export interface OnPerformCallback<V, P> {
     (action: BpdStateAction<V>): Promise<P>;
 }
 
 export interface OnUpdateCallback<V, P> {
-    (action: BpdStateAction<V>, result: P): void;
+    (result: P, action?: BpdStateAction<V>): void;
 }
 
 export interface OnErrorCallback<V> {
-    (action: BpdStateAction<V>, error: Error): void;
+    (error: Error, action?: BpdStateAction<V>): void;
 }
 
 export interface IBpdStateWorker<V, P> {
@@ -25,13 +25,16 @@ export class BpdStateWorker<V, P> implements IBpdStateWorker<V, P> {
     #queue: BpdStateAction<V>[];
     #queuelock: boolean;
     #lock: boolean;
-    #callback: OnPerformCallback<V, P>;
-    #onUpdate: OnUpdateCallback<V, P>;
-    #onError: OnErrorCallback<V>;
+    #callback: OnPerformCallback<V, P> | undefined;
+    #onUpdate: OnUpdateCallback<V, P> | undefined;
+    #onError: OnErrorCallback<V> | undefined;
     constructor() {
         this.#queue = [];
         this.#lock = false;
         this.#queuelock = false;
+        this.#onError = undefined;
+        this.#callback = undefined;
+        this.#onUpdate = undefined;
 
     }
 
@@ -66,15 +69,23 @@ export class BpdStateWorker<V, P> implements IBpdStateWorker<V, P> {
         }
         this.#lock = true;
         let current = this.#queue.shift();
-        this.#callback(current).then((state: P) => {
-            this.#onUpdate(current, state);
+        if (!current) {
             this.#lock = false;
             this.run();
-        }).catch(e => {
-            if (this.#onError) {
-                this.#onError(current, e);
-            }
-        });
+        }
+        if (this.#callback && current) {
+            this.#callback(current).then((state: P) => {
+                if (this.#onUpdate) {
+                    this.#onUpdate(state, current);
+                }
+                this.#lock = false;
+                this.run();
+            }).catch(e => {
+                if (this.#onError) {
+                    this.#onError(e, current);
+                }
+            });
+        }
     }
 
     private isInQueue(action: BpdStateAction<V>) {

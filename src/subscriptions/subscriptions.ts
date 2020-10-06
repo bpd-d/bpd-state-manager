@@ -11,6 +11,10 @@ export interface SubscriberOptions {
     singleRun: boolean;
 }
 
+interface ErrorCallback {
+    (e: Error): void;
+}
+
 export interface ISubscriptionsManager<VState> {
     onError(callback: (e: Error) => void): void;
     subscribe(callback: (state: VState) => void, options?: SubscriberOptions): string;
@@ -21,7 +25,7 @@ export interface ISubscriptionsManager<VState> {
 
 export class SubscriptionsManager<VState> implements ISubscriptionsManager<VState>{
     #subscribers: Subscriber<VState>[];
-    #onError: (e: Error) => void;
+    #onError: ErrorCallback | undefined;
     #counter: Generator<number, void, unknown>;
     #id: string;
     constructor(id: string) {
@@ -31,6 +35,7 @@ export class SubscriptionsManager<VState> implements ISubscriptionsManager<VStat
         this.#subscribers = [];
         this.#id = id;
         this.#counter = counter();
+        this.#onError = undefined;
     }
 
     subscribe(callback: (state: VState) => void, options?: SubscriberOptions): string {

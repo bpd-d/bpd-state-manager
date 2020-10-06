@@ -1,4 +1,4 @@
-import { BpdStateAction } from "../../src";
+import { BpdStateAction } from "../../src/interfaces";
 import { sleep } from "./functions";
 
 export class SimplePerformer {

@@ -1,5 +1,5 @@
-import { BpdState, BpdStateAction, IBpdState } from "../src";
-import { BpdStateWorker, IBpdStateWorker } from "../src/worker";
+import { BpdStateAction } from "../src/interfaces";
+import { IBpdState, BpdState } from "../src/state/state";
 import { getSimpleAction } from "./helpers/actions";
 import { sleep } from "./helpers/functions";
 import { SimpleSubscriber } from "./helpers/subscribers";
