@@ -1,6 +1,6 @@
 {
   "name": "bpd-state-manager",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Simple state management library",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
@@ -18,6 +18,10 @@
     "/dist/esm/helpers/errors.d.ts",
     "/dist/esm/helpers/functions.js",
     "/dist/esm/helpers/functions.d.ts",
+    "/dist/esm/helpers/copy.js",
+    "/dist/esm/helpers/copy.d.ts",
+    "/dist/esm/helpers/backup.js",
+    "/dist/esm/helpers/backup.d.ts",
     "/dist/esm/state/state.js",
     "/dist/esm/state/state.d.ts",
     "/dist/esm/subscriptions/subscriptions.js",

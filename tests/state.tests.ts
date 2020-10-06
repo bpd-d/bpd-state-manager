@@ -167,7 +167,32 @@ describe("Tests checking [State]", function () {
         expect(state).toBeDefined();
         expect(result).toEqual(simpleAction.data);
         expect(stateValue).toEqual(simpleAction.data);
+    })
 
+    it("Undo", async function () {
+        let failed: boolean = false;
+        let simpleAction = getSimpleAction();
+        let simpleSubscriber = new SimpleSubscriber();
+        let state: IBpdState<String, string> = undefined;
+        let result = null;
+        let stateValue = null;
+        try {
+            state = new BpdState<string, string>("ID", "", (state: string, action: BpdStateAction<string>) => {
+                result = action.data;
+                return result;
+            });
+            state.perform({ action: "action", data: "XXX" });
+            state.perform({ action: "action", data: "YYY" });
+            state.undo();
+        } catch (e) {
+            failed = true;
+        }
+        await sleep(50);
+        stateValue = state.getState();
+        expect(failed).toBeFalse();
+        expect(state).toBeDefined();
+        expect(result).toEqual("YYY");
+        expect(stateValue).toEqual("XXX");
     })
 
 

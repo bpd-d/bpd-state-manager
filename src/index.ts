@@ -3,14 +3,14 @@ import { is } from "./helpers/functions";
 import { BpdStateManagerConfig, StatePerformer, BpdStateAction, BpdManagedStates } from "./interfaces";
 import { BpdState, IBpdState } from "./state/state";
 
-export const VERSION_INFO = "0.1.1";
+export const VERSION_INFO = "0.1.2";
 declare global {
     interface Window {
         $bdpStateManager: any;
     }
 }
 
-export class BpdStateManager<VStates, TActions> {
+export class BpdStateManagerFactory<VStates, TActions> {
     #config: BpdStateManagerConfig<VStates> | undefined;
     #states: BpdManagedStates<VStates, TActions>;
     constructor(config?: BpdStateManagerConfig<VStates>) {
@@ -59,6 +59,12 @@ export class BpdStateManager<VStates, TActions> {
         })
     }
 
+    undo(name: string) {
+        this.executeIfValid(name, "Undo", (state) => {
+            state.undo();
+        })
+    }
+
     private executeIfValid(name: string, methodName: string, callback: (state: IBpdState<VStates, TActions>) => void) {
         if (!is(name)) {
             throw new CommonError(methodName + "Error", "State name is not provided")
@@ -71,50 +77,57 @@ export class BpdStateManager<VStates, TActions> {
     }
 }
 
-
-export function createStateManager<VStates, TActions>(config?: BpdStateManagerConfig<VStates>): void {
-    window.$bdpStateManager = new BpdStateManager<VStates, TActions>(config);
-}
-
-export function createState<VStates, TActions>(name: string, initialValue: VStates, performer: StatePerformer<TActions, VStates>, config?: BpdStateManagerConfig<VStates>): void {
-    if (!is(window.$bdpStateManager)) {
-        throw new StateManagerShorthandError("createState", "Manager must be initialized first with createStateManager")
+export class BpdStateManager {
+    static createStateManager<VStates, TActions>(config?: BpdStateManagerConfig<VStates>): void {
+        window.$bdpStateManager = new BpdStateManagerFactory<VStates, TActions>(config);
     }
-    window.$bdpStateManager.createState(name, initialValue, performer, config);
-}
 
-export function removeState<VStates, TActions>(name: string): void {
-    if (!is(window.$bdpStateManager)) {
-        throw new StateManagerShorthandError("removeState", "Manager must be initialized first with createStateManager")
+    static createState<VStates, TActions>(name: string, initialValue: VStates, performer: StatePerformer<TActions, VStates>, config?: BpdStateManagerConfig<VStates>): void {
+        if (!is(window.$bdpStateManager)) {
+            throw new StateManagerShorthandError("createState", "Manager must be initialized first with createStateManager")
+        }
+        window.$bdpStateManager.createState(name, initialValue, performer, config);
     }
-    window.$bdpStateManager.removeState(name);
-}
 
-export function getState<VStates, TActions>(name: string): IBpdState<VStates, TActions> {
-    if (!is(window.$bdpStateManager)) {
-        throw new StateManagerShorthandError("getState", "Manager must be initialized first with createStateManager")
+    static removeState<VStates, TActions>(name: string): void {
+        if (!is(window.$bdpStateManager)) {
+            throw new StateManagerShorthandError("removeState", "Manager must be initialized first with createStateManager")
+        }
+        window.$bdpStateManager.removeState(name);
     }
-    return window.$bdpStateManager.getState(name);
-}
 
-export function perform<VStates, TActions>(name: string, action: BpdStateAction<TActions>, callback?: (state: VStates) => void) {
-    if (!is(window.$bdpStateManager)) {
-        throw new StateManagerShorthandError("perform", "Manager must be initialized first with createStateManager")
+    static getState<VStates, TActions>(name: string): IBpdState<VStates, TActions> {
+        if (!is(window.$bdpStateManager)) {
+            throw new StateManagerShorthandError("getState", "Manager must be initialized first with createStateManager")
+        }
+        return window.$bdpStateManager.getState(name);
     }
-    window.$bdpStateManager.perform(name, action, callback);
-}
 
-export function subscribe<VStates, TActions>(name: string, callback: (state: VStates) => void): string {
-    if (!is(window.$bdpStateManager)) {
-        throw new StateManagerShorthandError("subscribe", "Manager must be initialized first with createStateManager")
+    static performStateAction<VStates, TActions>(name: string, action: BpdStateAction<TActions>, callback?: (state: VStates) => void) {
+        if (!is(window.$bdpStateManager)) {
+            throw new StateManagerShorthandError("perform", "Manager must be initialized first with createStateManager")
+        }
+        window.$bdpStateManager.perform(name, action, callback);
     }
-    return window.$bdpStateManager.subscribe(name, callback);
-}
 
-export function unsubscribe<VStates, TActions>(name: string, id: string) {
-    if (!is(window.$bdpStateManager)) {
-        throw new StateManagerShorthandError("unsubscribe", "Manager must be initialized first with createStateManager")
+    static subscribeToState<VStates, TActions>(name: string, callback: (state: VStates) => void): string {
+        if (!is(window.$bdpStateManager)) {
+            throw new StateManagerShorthandError("subscribe", "Manager must be initialized first with createStateManager")
+        }
+        return window.$bdpStateManager.subscribe(name, callback);
     }
-    window.$bdpStateManager.unsubscribe(name, id);
-}
 
+    static unsubscribeFromState<VStates, TActions>(name: string, id: string) {
+        if (!is(window.$bdpStateManager)) {
+            throw new StateManagerShorthandError("unsubscribe", "Manager must be initialized first with createStateManager")
+        }
+        window.$bdpStateManager.unsubscribe(name, id);
+    }
+
+    static undoState(name: string) {
+        if (!is(window.$bdpStateManager)) {
+            throw new StateManagerShorthandError("unsubscribe", "Manager must be initialized first with createStateManager")
+        }
+        window.$bdpStateManager.undo(name);
+    }
+}

@@ -25,7 +25,7 @@ export class BpdStateWorker<V, P> implements IBpdStateWorker<V, P> {
     #queue: BpdStateAction<V>[];
     #queuelock: boolean;
     #lock: boolean;
-    #callback: OnPerformCallback<V, P> | undefined;
+    #onPerform: OnPerformCallback<V, P> | undefined;
     #onUpdate: OnUpdateCallback<V, P> | undefined;
     #onError: OnErrorCallback<V> | undefined;
     constructor() {
@@ -33,13 +33,13 @@ export class BpdStateWorker<V, P> implements IBpdStateWorker<V, P> {
         this.#lock = false;
         this.#queuelock = false;
         this.#onError = undefined;
-        this.#callback = undefined;
+        this.#onPerform = undefined;
         this.#onUpdate = undefined;
 
     }
 
     onPerform(callback: OnPerformCallback<V, P>) {
-        this.#callback = callback;
+        this.#onPerform = callback;
     }
 
     onUpdate(callback: OnUpdateCallback<V, P>) {
@@ -54,7 +54,7 @@ export class BpdStateWorker<V, P> implements IBpdStateWorker<V, P> {
         if (!is(action)) {
             throw new IncorrectDataError("Inproper action object passed to worker")
         }
-        if (!is(this.#callback) || !is(this.#onUpdate)) {
+        if (!is(this.#onPerform) || !is(this.#onUpdate)) {
             throw new WorkerNotReadyError("Callbacks are not set");
         }
         if (!this.isInQueue(action)) {
@@ -73,8 +73,8 @@ export class BpdStateWorker<V, P> implements IBpdStateWorker<V, P> {
             this.#lock = false;
             this.run();
         }
-        if (this.#callback && current) {
-            this.#callback(current).then((state: P) => {
+        if (this.#onPerform && current) {
+            this.#onPerform(current).then((state: P) => {
                 if (this.#onUpdate) {
                     this.#onUpdate(state, current);
                 }

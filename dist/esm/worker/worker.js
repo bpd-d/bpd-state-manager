@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     }
     return privateMap.get(receiver);
 };
-var _queue, _queuelock, _lock, _callback, _onUpdate, _onError;
+var _queue, _queuelock, _lock, _onPerform, _onUpdate, _onError;
 import { IncorrectDataError, WorkerNotReadyError } from "../helpers/errors";
 import { is } from "../helpers/functions";
 export class BpdStateWorker {
@@ -19,18 +19,18 @@ export class BpdStateWorker {
         _queue.set(this, void 0);
         _queuelock.set(this, void 0);
         _lock.set(this, void 0);
-        _callback.set(this, void 0);
+        _onPerform.set(this, void 0);
         _onUpdate.set(this, void 0);
         _onError.set(this, void 0);
         __classPrivateFieldSet(this, _queue, []);
         __classPrivateFieldSet(this, _lock, false);
         __classPrivateFieldSet(this, _queuelock, false);
         __classPrivateFieldSet(this, _onError, undefined);
-        __classPrivateFieldSet(this, _callback, undefined);
+        __classPrivateFieldSet(this, _onPerform, undefined);
         __classPrivateFieldSet(this, _onUpdate, undefined);
     }
     onPerform(callback) {
-        __classPrivateFieldSet(this, _callback, callback);
+        __classPrivateFieldSet(this, _onPerform, callback);
     }
     onUpdate(callback) {
         __classPrivateFieldSet(this, _onUpdate, callback);
@@ -42,7 +42,7 @@ export class BpdStateWorker {
         if (!is(action)) {
             throw new IncorrectDataError("Inproper action object passed to worker");
         }
-        if (!is(__classPrivateFieldGet(this, _callback)) || !is(__classPrivateFieldGet(this, _onUpdate))) {
+        if (!is(__classPrivateFieldGet(this, _onPerform)) || !is(__classPrivateFieldGet(this, _onUpdate))) {
             throw new WorkerNotReadyError("Callbacks are not set");
         }
         if (!this.isInQueue(action)) {
@@ -60,8 +60,8 @@ export class BpdStateWorker {
             __classPrivateFieldSet(this, _lock, false);
             this.run();
         }
-        if (__classPrivateFieldGet(this, _callback) && current) {
-            __classPrivateFieldGet(this, _callback).call(this, current).then((state) => {
+        if (__classPrivateFieldGet(this, _onPerform) && current) {
+            __classPrivateFieldGet(this, _onPerform).call(this, current).then((state) => {
                 if (__classPrivateFieldGet(this, _onUpdate)) {
                     __classPrivateFieldGet(this, _onUpdate).call(this, state, current);
                 }
@@ -83,4 +83,4 @@ export class BpdStateWorker {
         return index > -1;
     }
 }
-_queue = new WeakMap(), _queuelock = new WeakMap(), _lock = new WeakMap(), _callback = new WeakMap(), _onUpdate = new WeakMap(), _onError = new WeakMap();
+_queue = new WeakMap(), _queuelock = new WeakMap(), _lock = new WeakMap(), _onPerform = new WeakMap(), _onUpdate = new WeakMap(), _onError = new WeakMap();

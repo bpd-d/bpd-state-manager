@@ -1,15 +1,15 @@
-import { BpdStateManager } from "../src"
+import { BpdStateManagerFactory } from "../src"
 import { getSimpleAction } from "./helpers/actions";
 import { sleep } from "./helpers/functions";
 
 describe("Tests checking [BpdStateManager]", function () {
     it("Initialization", function () {
-        let manager = new BpdStateManager<string, string>();
+        let manager = new BpdStateManagerFactory<string, string>();
         expect(manager).toBeDefined();
     })
 
     it("createState", function () {
-        let manager = new BpdStateManager<string, string>();
+        let manager = new BpdStateManagerFactory<string, string>();
         manager.createState("SIMPLE", "x", (state, action) => {
             return action.data;
         })
@@ -19,7 +19,7 @@ describe("Tests checking [BpdStateManager]", function () {
     })
 
     it("createState - incorrect name", function () {
-        let manager = new BpdStateManager<string, string>();
+        let manager = new BpdStateManagerFactory<string, string>();
         let failed = false;
         try {
             manager.createState(null, "x", (state, action) => {
@@ -34,7 +34,7 @@ describe("Tests checking [BpdStateManager]", function () {
     })
 
     it("removeState - incorrect name", function () {
-        let manager = new BpdStateManager<string, string>();
+        let manager = new BpdStateManagerFactory<string, string>();
         let failed = false;
         try {
             manager.createState("SIMPLE", "x", (state, action) => {
@@ -51,7 +51,7 @@ describe("Tests checking [BpdStateManager]", function () {
     })
 
     it("removeState", function () {
-        let manager = new BpdStateManager<string, string>();
+        let manager = new BpdStateManagerFactory<string, string>();
         let failed = false;
         let resState = undefined
         try {
@@ -67,7 +67,7 @@ describe("Tests checking [BpdStateManager]", function () {
     })
 
     it("subscribe", function () {
-        let manager = new BpdStateManager<string, string>();
+        let manager = new BpdStateManagerFactory<string, string>();
         let failed = false;
         let id = undefined;
         try {
@@ -88,7 +88,7 @@ describe("Tests checking [BpdStateManager]", function () {
     })
 
     it("subscribe - not exisiting state", function () {
-        let manager = new BpdStateManager<string, string>();
+        let manager = new BpdStateManagerFactory<string, string>();
         let failed = false;
         let id = undefined;
         try {
@@ -109,7 +109,7 @@ describe("Tests checking [BpdStateManager]", function () {
     })
 
     it("Unsubscribe", function () {
-        let manager = new BpdStateManager<string, string>();
+        let manager = new BpdStateManagerFactory<string, string>();
         let failed = false;
         let id = undefined;
         try {
@@ -131,7 +131,7 @@ describe("Tests checking [BpdStateManager]", function () {
     })
 
     it("Unsubscribe - incorrect state", function () {
-        let manager = new BpdStateManager<string, string>();
+        let manager = new BpdStateManagerFactory<string, string>();
         let failed = false;
         let id = undefined;
         try {
@@ -153,7 +153,7 @@ describe("Tests checking [BpdStateManager]", function () {
     })
 
     it("Perfrom", async function () {
-        let manager = new BpdStateManager<string, string>();
+        let manager = new BpdStateManagerFactory<string, string>();
         let failed = false;
         let action = getSimpleAction();
         let id = undefined;
@@ -177,7 +177,7 @@ describe("Tests checking [BpdStateManager]", function () {
     })
 
     it("Perfrom - incorrect state", async function () {
-        let manager = new BpdStateManager<string, string>();
+        let manager = new BpdStateManagerFactory<string, string>();
         let failed = false;
         let action = getSimpleAction();
         let id = undefined;

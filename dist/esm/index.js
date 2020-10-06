@@ -15,8 +15,8 @@ var _config, _states;
 import { CommonError, CreateStateError, StateManagerShorthandError } from "./helpers/errors";
 import { is } from "./helpers/functions";
 import { BpdState } from "./state/state";
-export const VERSION_INFO = "0.1.0";
-export class BpdStateManager {
+export const VERSION_INFO = "0.1.1";
+export class BpdStateManagerFactory {
     constructor(config) {
         _config.set(this, void 0);
         _states.set(this, void 0);
@@ -58,6 +58,11 @@ export class BpdStateManager {
             state.unsubscribe(id);
         });
     }
+    undo(name) {
+        this.executeIfValid(name, "Undo", (state) => {
+            state.undo();
+        });
+    }
     executeIfValid(name, methodName, callback) {
         if (!is(name)) {
             throw new CommonError(methodName + "Error", "State name is not provided");
@@ -70,42 +75,50 @@ export class BpdStateManager {
     }
 }
 _config = new WeakMap(), _states = new WeakMap();
-export function createStateManager(config) {
-    window.$bdpStateManager = new BpdStateManager(config);
-}
-export function createState(name, initialValue, performer, config) {
-    if (!is(window.$bdpStateManager)) {
-        throw new StateManagerShorthandError("createState", "Manager must be initialized first with createStateManager");
+export class BpdStateManager {
+    static createStateManager(config) {
+        window.$bdpStateManager = new BpdStateManagerFactory(config);
     }
-    window.$bdpStateManager.createState(name, initialValue, performer, config);
-}
-export function removeState(name) {
-    if (!is(window.$bdpStateManager)) {
-        throw new StateManagerShorthandError("removeState", "Manager must be initialized first with createStateManager");
+    static createState(name, initialValue, performer, config) {
+        if (!is(window.$bdpStateManager)) {
+            throw new StateManagerShorthandError("createState", "Manager must be initialized first with createStateManager");
+        }
+        window.$bdpStateManager.createState(name, initialValue, performer, config);
     }
-    window.$bdpStateManager.removeState(name);
-}
-export function getState(name) {
-    if (!is(window.$bdpStateManager)) {
-        throw new StateManagerShorthandError("getState", "Manager must be initialized first with createStateManager");
+    static removeState(name) {
+        if (!is(window.$bdpStateManager)) {
+            throw new StateManagerShorthandError("removeState", "Manager must be initialized first with createStateManager");
+        }
+        window.$bdpStateManager.removeState(name);
     }
-    return window.$bdpStateManager.getState(name);
-}
-export function perform(name, action, callback) {
-    if (!is(window.$bdpStateManager)) {
-        throw new StateManagerShorthandError("perform", "Manager must be initialized first with createStateManager");
+    static getState(name) {
+        if (!is(window.$bdpStateManager)) {
+            throw new StateManagerShorthandError("getState", "Manager must be initialized first with createStateManager");
+        }
+        return window.$bdpStateManager.getState(name);
     }
-    window.$bdpStateManager.perform(name, action, callback);
-}
-export function subscribe(name, callback) {
-    if (!is(window.$bdpStateManager)) {
-        throw new StateManagerShorthandError("subscribe", "Manager must be initialized first with createStateManager");
+    static performStateAction(name, action, callback) {
+        if (!is(window.$bdpStateManager)) {
+            throw new StateManagerShorthandError("perform", "Manager must be initialized first with createStateManager");
+        }
+        window.$bdpStateManager.perform(name, action, callback);
     }
-    return window.$bdpStateManager.subscribe(name, callback);
-}
-export function unsubscribe(name, id) {
-    if (!is(window.$bdpStateManager)) {
-        throw new StateManagerShorthandError("unsubscribe", "Manager must be initialized first with createStateManager");
+    static subscribeToState(name, callback) {
+        if (!is(window.$bdpStateManager)) {
+            throw new StateManagerShorthandError("subscribe", "Manager must be initialized first with createStateManager");
+        }
+        return window.$bdpStateManager.subscribe(name, callback);
     }
-    window.$bdpStateManager.unsubscribe(name, id);
+    static unsubscribeFromState(name, id) {
+        if (!is(window.$bdpStateManager)) {
+            throw new StateManagerShorthandError("unsubscribe", "Manager must be initialized first with createStateManager");
+        }
+        window.$bdpStateManager.unsubscribe(name, id);
+    }
+    static undoState(name) {
+        if (!is(window.$bdpStateManager)) {
+            throw new StateManagerShorthandError("unsubscribe", "Manager must be initialized first with createStateManager");
+        }
+        window.$bdpStateManager.undo(name);
+    }
 }
