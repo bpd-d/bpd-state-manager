@@ -8,7 +8,8 @@ export class ObjectCopyMaker<VState> implements IObjectCopyMaker<VState> {
         let newOne: VState | null = null;
         if (['number', 'string', 'boolean'].includes(typeof obj) || Array.isArray(obj)) {
             newOne = obj;
-        } else {
+        }
+        else {
             newOne = { ...obj };
         }
         return newOne;

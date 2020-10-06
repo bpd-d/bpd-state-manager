@@ -1,6 +1,7 @@
 export interface IStateBackup<VState> {
     push(v: VState): void;
     undo(): VState | undefined;
+    length(): number;
 }
 
 export class StateBackup<VState> implements IStateBackup<VState> {
@@ -21,6 +22,10 @@ export class StateBackup<VState> implements IStateBackup<VState> {
             return this.#states.pop();
         }
         return undefined;
+    }
+
+    length(): number {
+        return this.#states.length;
     }
 
 }

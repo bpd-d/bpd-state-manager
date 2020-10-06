@@ -1,9 +1,9 @@
 import { CommonError, CreateStateError, StateManagerShorthandError } from "./helpers/errors";
 import { is } from "./helpers/functions";
-import { BpdStateManagerConfig, StatePerformer, BpdStateAction, BpdManagedStates } from "./interfaces";
+import { BpdStateManagerConfig, StateMutationHandler, BpdStateAction, BpdManagedStates } from "./interfaces";
 import { BpdState, IBpdState } from "./state/state";
 
-export const VERSION_INFO = "0.1.2";
+export const VERSION_INFO = "0.1.4";
 declare global {
     interface Window {
         $bdpStateManager: any;
@@ -18,11 +18,11 @@ export class BpdStateManagerFactory<VStates, TActions> {
         this.#states = {};
     }
 
-    createState(name: string, initialValue: VStates, performer: StatePerformer<TActions, VStates>, config?: BpdStateManagerConfig<VStates>) {
+    createState(name: string, initialValue: VStates, mutationHandler: StateMutationHandler<TActions, VStates>, config?: BpdStateManagerConfig<VStates>) {
         if (!is(name)) {
             throw new CreateStateError("State name was not provided");
         }
-        this.#states[name] = new BpdState(name, initialValue, performer, config ?? this.#config);
+        this.#states[name] = new BpdState(name, initialValue, mutationHandler, config ?? this.#config);
     }
 
     removeState(name: string) {
@@ -82,11 +82,11 @@ export class BpdStateManager {
         window.$bdpStateManager = new BpdStateManagerFactory<VStates, TActions>(config);
     }
 
-    static createState<VStates, TActions>(name: string, initialValue: VStates, performer: StatePerformer<TActions, VStates>, config?: BpdStateManagerConfig<VStates>): void {
+    static createState<VStates, TActions>(name: string, initialValue: VStates, mutationHandler: StateMutationHandler<TActions, VStates>, config?: BpdStateManagerConfig<VStates>): void {
         if (!is(window.$bdpStateManager)) {
             throw new StateManagerShorthandError("createState", "Manager must be initialized first with createStateManager")
         }
-        window.$bdpStateManager.createState(name, initialValue, performer, config);
+        window.$bdpStateManager.createState(name, initialValue, mutationHandler, config);
     }
 
     static removeState<VStates, TActions>(name: string): void {

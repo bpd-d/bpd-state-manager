@@ -2,10 +2,12 @@ import { IStateBackup, StateBackup } from "../helpers/backup";
 import { ObjectCopyMaker } from "../helpers/copy";
 import { InitStateError, IncorrectDataError } from "../helpers/errors";
 import { is } from "../helpers/functions";
-import { BpdStateAction, BpdStateManagerConfig, IObjectCopyMaker, OnChangeEventType, StatePerformer } from "../interfaces";
+import { BpdStateAction, BpdStateManagerConfig, IObjectCopyMaker, OnChangeEventType, StateMutationHandler } from "../interfaces";
 import { ISubscriptionsManager, SubscriptionsManager } from "../subscriptions/subscriptions";
 import { IBpdStateWorker, BpdStateWorker } from "../worker/worker";
+
 const UNDO_ACTION_NAME = "$$UNDO_FROM_BACKUP";
+
 export interface IBpdState<VState, PAction> {
     perform(action: BpdStateAction<PAction>, callback?: (state: VState) => void | undefined): void;
     subscribe(callback: (state: VState) => void): string | undefined;
@@ -20,24 +22,24 @@ export class BpdState<VState, PAction> implements IBpdState<VState, PAction> {
     #id: string;
     #config: BpdStateManagerConfig<VState>;
     #worker: IBpdStateWorker<PAction, VState>;
-    #performer: StatePerformer<PAction, VState>;
+    #mutationHandler: StateMutationHandler<PAction, VState>;
     #subscriptionManager: ISubscriptionsManager<VState>;
     #copyMaker: IObjectCopyMaker<VState>;
 
-    constructor(id: string, init: VState, performer: StatePerformer<PAction, VState>, config?: BpdStateManagerConfig<VState>) {
+    constructor(id: string, init: VState, mutationHandler: StateMutationHandler<PAction, VState>, config?: BpdStateManagerConfig<VState>) {
         if (!is(id)) {
             throw new InitStateError("State id must be provided")
         }
         if (!is(init)) {
             throw new InitStateError("Initial value must be a valid, initialized object")
         }
-        if (!is(performer)) {
+        if (!is(mutationHandler)) {
             throw new InitStateError("Perfromer callback was not provided")
         }
         this.#id = id;
         this.#state = init;
         this.#config = config ?? {};
-        this.#performer = performer;
+        this.#mutationHandler = mutationHandler;
         this.#worker = new BpdStateWorker<PAction, VState>();
         this.#worker.onUpdate(this.onWorkerChange.bind(this))
         this.#worker.onPerform(this.onWorkerPerform.bind(this));
@@ -48,6 +50,11 @@ export class BpdState<VState, PAction> implements IBpdState<VState, PAction> {
         this.#backup = new StateBackup();
     }
 
+    /**
+     * Performs an action on the state
+     * @param action - action to be performed
+     * @param callback - optional - subscription callback for one time execution
+     */
     perform(action: BpdStateAction<PAction>, callback?: (state: VState) => void) {
         if (!is(action)) {
             this.reportError("lib", "In proper action object", new IncorrectDataError("In proper action object"))
@@ -60,6 +67,10 @@ export class BpdState<VState, PAction> implements IBpdState<VState, PAction> {
         this.#worker.perform(action);
     }
 
+    /**
+     * Attaches new subscriber to state
+     * @param callback Function to be assigned to subscriber
+     */
     subscribe(callback: (state: VState) => void): string | undefined {
         if (!is(callback)) {
             this.reportError("lib", "", new IncorrectDataError("Callback has not been set"))
@@ -68,6 +79,10 @@ export class BpdState<VState, PAction> implements IBpdState<VState, PAction> {
         return this.#subscriptionManager.subscribe(callback)
     }
 
+    /**
+     * Removes subscriber from the state
+     * @param id subscription identifier
+     */
     unsubscribe(id: string): boolean {
         if (!is(id)) {
             return false;
@@ -76,13 +91,20 @@ export class BpdState<VState, PAction> implements IBpdState<VState, PAction> {
         return true;
     }
 
+    /**
+     * Returns current state
+     */
     getState(): VState {
         return this.#copyMaker.copy(this.#state);
     }
 
+    /**
+     * Performs undo on state
+     */
     undo(): void {
-        this.#worker.perform({ action: UNDO_ACTION_NAME});
+        this.#worker.perform({ action: UNDO_ACTION_NAME });
     }
+
     /**
      * Callback invoked by a worker when state change perform is completed
      * Method assigns new state and calls subscription manager to notify subscribers about the change
@@ -111,7 +133,7 @@ export class BpdState<VState, PAction> implements IBpdState<VState, PAction> {
         }
 
         return new Promise<VState>((resolve) => {
-            resolve(this.#performer(this.#copyMaker.copy(this.#state), action));
+            resolve(this.#mutationHandler(this.#copyMaker.copy(this.#state), action));
         })
     }
 

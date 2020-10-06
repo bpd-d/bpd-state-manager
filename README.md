@@ -1,9 +1,15 @@
-# bpd-state-manager
+# Bpd State Manager
 Simple state management library for web applications.
 
 ## Basics
 States default are immutable. The only way to update state goes though performer function which is similar in structure to reducer pattern used in e.g. Redux.
-All subscribers get most recent copy of the state when are called after update
+All subscribers get most recent copy of the state when are called after update.
+
+## Installation
+When using **npm** call:
+```
+npm install --save-dev bpd-state-manager
+```
 
 ## Usage
 There are several ways to work with library in application.
@@ -14,15 +20,14 @@ First call **BpdStateManager.createStateManager** in the application init. This 
 Method may take *config* object as argument. It will be passed to children state instances on the time of their initialization. Options set in this object will overwrite default behavior of the state.
 ```
 BpdStateManager.createStateManager(config?);
-
 ```
-To create state call  **BpdStateManager.createState** and pass state name, initial value and performer function to it, see example:
+To create state call  **BpdStateManager.createState** and pass state name, initial value and mutation handler function to it, see example:
 ```
-BpdStateManager.createState(name: string, initialValue: VStates, performer: StatePerformer<TActions, VStates>, config?: BpdStateManagerConfig<VStates>)
+BpdStateManager.createState(name: string, initialValue: VStates, mutationHandler: StateMutationHandler<TActions, VStates>, config?: BpdStateManagerConfig<VStates>)
 ```
 
 >NOTE
->One state factory may create many states so there is point to create complex state object with many actions in the performer. Specially if complex object may be split into smaller chunks. Splitting also gives a performance advantage, because each state has it's own worker queue.  Sases where there are many updates invoked on single state with many subscribers may lead to performance degradation.
+>One state factory may create many states so there is point to create complex state object with many actions in the mutation handler. Specially if complex object may be split into smaller chunks. Splitting also gives a performance advantage, because each state has it's own worker queue.  Sases where there are many updates invoked on single state with many subscribers may lead to performance degradation.
 
 >WARN
 >Make sure each state name is unique.
@@ -59,16 +64,14 @@ State config is an object that may holds configuration for state instance. It ke
 * onError?: BpdStateOnError - callback that is invoked when error occurs in state. It receives state identifier, change type, error and detail message.
 * copyMaker?: IObjectCopyMaker<V> - instance which is used by to create copy of the state.
 
-## Performer
-Performer is a callback method used to mutate state. It accepts two arguments: *state* and *action* where state represents current state value and action is an object that holds mutate data or points to mutation operation. Method shall return a new state value:
+## Mutation Handler
+Mutation handler is a callback method used to mutate state. It accepts two arguments: *state* and *action* where state represents current state value and action is an object that holds mutate data or points to mutation operation. Method shall return a new state value:
 
 ```
-function StatePerformer<V, P>(state: P, action: BpdStateAction<V>): P {
+function StateMutationHandlerr<V, P>(state: P, action: BpdStateAction<V>): P {
     // Make change to state value
     // Use action to identify type of change and get additional data
     return state;
 }
 
 ```
-
-##

@@ -209,6 +209,9 @@ class StateBackup {
         }
         return undefined;
     }
+    length() {
+        return __classPrivateFieldGet(this, _states).length;
+    }
 }
 _states = new WeakMap(), _maxCount = new WeakMap();
 
@@ -428,7 +431,7 @@ var state_classPrivateFieldGet = (undefined && undefined.__classPrivateFieldGet)
     }
     return privateMap.get(receiver);
 };
-var _state, _backup, state_id, _config, _worker, _performer, _subscriptionManager, _copyMaker;
+var _state, _backup, state_id, _config, _worker, _mutationHandler, _subscriptionManager, _copyMaker;
 
 
 
@@ -437,14 +440,14 @@ var _state, _backup, state_id, _config, _worker, _performer, _subscriptionManage
 
 const UNDO_ACTION_NAME = "$$UNDO_FROM_BACKUP";
 class state_BpdState {
-    constructor(id, init, performer, config) {
+    constructor(id, init, mutationHandler, config) {
         var _a;
         _state.set(this, void 0);
         _backup.set(this, void 0);
         state_id.set(this, void 0);
         _config.set(this, void 0);
         _worker.set(this, void 0);
-        _performer.set(this, void 0);
+        _mutationHandler.set(this, void 0);
         _subscriptionManager.set(this, void 0);
         _copyMaker.set(this, void 0);
         if (!is(id)) {
@@ -453,13 +456,13 @@ class state_BpdState {
         if (!is(init)) {
             throw new InitStateError("Initial value must be a valid, initialized object");
         }
-        if (!is(performer)) {
+        if (!is(mutationHandler)) {
             throw new InitStateError("Perfromer callback was not provided");
         }
         state_classPrivateFieldSet(this, state_id, id);
         state_classPrivateFieldSet(this, _state, init);
         state_classPrivateFieldSet(this, _config, config !== null && config !== void 0 ? config : {});
-        state_classPrivateFieldSet(this, _performer, performer);
+        state_classPrivateFieldSet(this, _mutationHandler, mutationHandler);
         state_classPrivateFieldSet(this, _worker, new worker_BpdStateWorker());
         state_classPrivateFieldGet(this, _worker).onUpdate(this.onWorkerChange.bind(this));
         state_classPrivateFieldGet(this, _worker).onPerform(this.onWorkerPerform.bind(this));
@@ -469,6 +472,11 @@ class state_BpdState {
         state_classPrivateFieldSet(this, _copyMaker, (_a = state_classPrivateFieldGet(this, _config).copyMaker) !== null && _a !== void 0 ? _a : new ObjectCopyMaker());
         state_classPrivateFieldSet(this, _backup, new StateBackup());
     }
+    /**
+     * Performs an action on the state
+     * @param action - action to be performed
+     * @param callback - optional - subscription callback for one time execution
+     */
     perform(action, callback) {
         if (!is(action)) {
             this.reportError("lib", "In proper action object", new IncorrectDataError("In proper action object"));
@@ -480,6 +488,10 @@ class state_BpdState {
         }
         state_classPrivateFieldGet(this, _worker).perform(action);
     }
+    /**
+     * Attaches new subscriber to state
+     * @param callback Function to be assigned to subscriber
+     */
     subscribe(callback) {
         if (!is(callback)) {
             this.reportError("lib", "", new IncorrectDataError("Callback has not been set"));
@@ -487,6 +499,10 @@ class state_BpdState {
         }
         return state_classPrivateFieldGet(this, _subscriptionManager).subscribe(callback);
     }
+    /**
+     * Removes subscriber from the state
+     * @param id subscription identifier
+     */
     unsubscribe(id) {
         if (!is(id)) {
             return false;
@@ -494,9 +510,15 @@ class state_BpdState {
         state_classPrivateFieldGet(this, _subscriptionManager).unsubscribe(id);
         return true;
     }
+    /**
+     * Returns current state
+     */
     getState() {
         return state_classPrivateFieldGet(this, _copyMaker).copy(state_classPrivateFieldGet(this, _state));
     }
+    /**
+     * Performs undo on state
+     */
     undo() {
         state_classPrivateFieldGet(this, _worker).perform({ action: UNDO_ACTION_NAME });
     }
@@ -527,7 +549,7 @@ class state_BpdState {
             });
         }
         return new Promise((resolve) => {
-            resolve(state_classPrivateFieldGet(this, _performer).call(this, state_classPrivateFieldGet(this, _copyMaker).copy(state_classPrivateFieldGet(this, _state)), action));
+            resolve(state_classPrivateFieldGet(this, _mutationHandler).call(this, state_classPrivateFieldGet(this, _copyMaker).copy(state_classPrivateFieldGet(this, _state)), action));
         });
     }
     onWorkerError(e, action) {
@@ -557,7 +579,7 @@ class state_BpdState {
         });
     }
 }
-_state = new WeakMap(), _backup = new WeakMap(), state_id = new WeakMap(), _config = new WeakMap(), _worker = new WeakMap(), _performer = new WeakMap(), _subscriptionManager = new WeakMap(), _copyMaker = new WeakMap();
+_state = new WeakMap(), _backup = new WeakMap(), state_id = new WeakMap(), _config = new WeakMap(), _worker = new WeakMap(), _mutationHandler = new WeakMap(), _subscriptionManager = new WeakMap(), _copyMaker = new WeakMap();
 
 // CONCATENATED MODULE: ./src/index.ts
 var src_classPrivateFieldSet = (undefined && undefined.__classPrivateFieldSet) || function (receiver, privateMap, value) {
@@ -577,7 +599,7 @@ var src_config, src_states;
 
 
 
-const VERSION_INFO = "0.1.1";
+const VERSION_INFO = "0.1.3";
 class src_BpdStateManagerFactory {
     constructor(config) {
         src_config.set(this, void 0);
@@ -585,11 +607,11 @@ class src_BpdStateManagerFactory {
         src_classPrivateFieldSet(this, src_config, config);
         src_classPrivateFieldSet(this, src_states, {});
     }
-    createState(name, initialValue, performer, config) {
+    createState(name, initialValue, mutationHandler, config) {
         if (!is(name)) {
             throw new CreateStateError("State name was not provided");
         }
-        src_classPrivateFieldGet(this, src_states)[name] = new state_BpdState(name, initialValue, performer, config !== null && config !== void 0 ? config : src_classPrivateFieldGet(this, src_config));
+        src_classPrivateFieldGet(this, src_states)[name] = new state_BpdState(name, initialValue, mutationHandler, config !== null && config !== void 0 ? config : src_classPrivateFieldGet(this, src_config));
     }
     removeState(name) {
         this.executeIfValid(name, "Perform", (state) => {
@@ -641,11 +663,11 @@ class src_BpdStateManager {
     static createStateManager(config) {
         window.$bdpStateManager = new src_BpdStateManagerFactory(config);
     }
-    static createState(name, initialValue, performer, config) {
+    static createState(name, initialValue, mutationHandler, config) {
         if (!is(window.$bdpStateManager)) {
             throw new StateManagerShorthandError("createState", "Manager must be initialized first with createStateManager");
         }
-        window.$bdpStateManager.createState(name, initialValue, performer, config);
+        window.$bdpStateManager.createState(name, initialValue, mutationHandler, config);
     }
     static removeState(name) {
         if (!is(window.$bdpStateManager)) {

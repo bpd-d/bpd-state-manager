@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     }
     return privateMap.get(receiver);
 };
-var _state, _backup, _id, _config, _worker, _performer, _subscriptionManager, _copyMaker;
+var _state, _backup, _id, _config, _worker, _mutationHandler, _subscriptionManager, _copyMaker;
 import { StateBackup } from "../helpers/backup";
 import { ObjectCopyMaker } from "../helpers/copy";
 import { InitStateError, IncorrectDataError } from "../helpers/errors";
@@ -20,14 +20,14 @@ import { SubscriptionsManager } from "../subscriptions/subscriptions";
 import { BpdStateWorker } from "../worker/worker";
 const UNDO_ACTION_NAME = "$$UNDO_FROM_BACKUP";
 export class BpdState {
-    constructor(id, init, performer, config) {
+    constructor(id, init, mutationHandler, config) {
         var _a;
         _state.set(this, void 0);
         _backup.set(this, void 0);
         _id.set(this, void 0);
         _config.set(this, void 0);
         _worker.set(this, void 0);
-        _performer.set(this, void 0);
+        _mutationHandler.set(this, void 0);
         _subscriptionManager.set(this, void 0);
         _copyMaker.set(this, void 0);
         if (!is(id)) {
@@ -36,13 +36,13 @@ export class BpdState {
         if (!is(init)) {
             throw new InitStateError("Initial value must be a valid, initialized object");
         }
-        if (!is(performer)) {
+        if (!is(mutationHandler)) {
             throw new InitStateError("Perfromer callback was not provided");
         }
         __classPrivateFieldSet(this, _id, id);
         __classPrivateFieldSet(this, _state, init);
         __classPrivateFieldSet(this, _config, config !== null && config !== void 0 ? config : {});
-        __classPrivateFieldSet(this, _performer, performer);
+        __classPrivateFieldSet(this, _mutationHandler, mutationHandler);
         __classPrivateFieldSet(this, _worker, new BpdStateWorker());
         __classPrivateFieldGet(this, _worker).onUpdate(this.onWorkerChange.bind(this));
         __classPrivateFieldGet(this, _worker).onPerform(this.onWorkerPerform.bind(this));
@@ -52,6 +52,11 @@ export class BpdState {
         __classPrivateFieldSet(this, _copyMaker, (_a = __classPrivateFieldGet(this, _config).copyMaker) !== null && _a !== void 0 ? _a : new ObjectCopyMaker());
         __classPrivateFieldSet(this, _backup, new StateBackup());
     }
+    /**
+     * Performs an action on the state
+     * @param action - action to be performed
+     * @param callback - optional - subscription callback for one time execution
+     */
     perform(action, callback) {
         if (!is(action)) {
             this.reportError("lib", "In proper action object", new IncorrectDataError("In proper action object"));
@@ -63,6 +68,10 @@ export class BpdState {
         }
         __classPrivateFieldGet(this, _worker).perform(action);
     }
+    /**
+     * Attaches new subscriber to state
+     * @param callback Function to be assigned to subscriber
+     */
     subscribe(callback) {
         if (!is(callback)) {
             this.reportError("lib", "", new IncorrectDataError("Callback has not been set"));
@@ -70,6 +79,10 @@ export class BpdState {
         }
         return __classPrivateFieldGet(this, _subscriptionManager).subscribe(callback);
     }
+    /**
+     * Removes subscriber from the state
+     * @param id subscription identifier
+     */
     unsubscribe(id) {
         if (!is(id)) {
             return false;
@@ -77,9 +90,15 @@ export class BpdState {
         __classPrivateFieldGet(this, _subscriptionManager).unsubscribe(id);
         return true;
     }
+    /**
+     * Returns current state
+     */
     getState() {
         return __classPrivateFieldGet(this, _copyMaker).copy(__classPrivateFieldGet(this, _state));
     }
+    /**
+     * Performs undo on state
+     */
     undo() {
         __classPrivateFieldGet(this, _worker).perform({ action: UNDO_ACTION_NAME });
     }
@@ -110,7 +129,7 @@ export class BpdState {
             });
         }
         return new Promise((resolve) => {
-            resolve(__classPrivateFieldGet(this, _performer).call(this, __classPrivateFieldGet(this, _copyMaker).copy(__classPrivateFieldGet(this, _state)), action));
+            resolve(__classPrivateFieldGet(this, _mutationHandler).call(this, __classPrivateFieldGet(this, _copyMaker).copy(__classPrivateFieldGet(this, _state)), action));
         });
     }
     onWorkerError(e, action) {
@@ -140,4 +159,4 @@ export class BpdState {
         });
     }
 }
-_state = new WeakMap(), _backup = new WeakMap(), _id = new WeakMap(), _config = new WeakMap(), _worker = new WeakMap(), _performer = new WeakMap(), _subscriptionManager = new WeakMap(), _copyMaker = new WeakMap();
+_state = new WeakMap(), _backup = new WeakMap(), _id = new WeakMap(), _config = new WeakMap(), _worker = new WeakMap(), _mutationHandler = new WeakMap(), _subscriptionManager = new WeakMap(), _copyMaker = new WeakMap();

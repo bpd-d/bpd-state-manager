@@ -15,7 +15,7 @@ var _config, _states;
 import { CommonError, CreateStateError, StateManagerShorthandError } from "./helpers/errors";
 import { is } from "./helpers/functions";
 import { BpdState } from "./state/state";
-export const VERSION_INFO = "0.1.1";
+export const VERSION_INFO = "0.1.3";
 export class BpdStateManagerFactory {
     constructor(config) {
         _config.set(this, void 0);
@@ -23,11 +23,11 @@ export class BpdStateManagerFactory {
         __classPrivateFieldSet(this, _config, config);
         __classPrivateFieldSet(this, _states, {});
     }
-    createState(name, initialValue, performer, config) {
+    createState(name, initialValue, mutationHandler, config) {
         if (!is(name)) {
             throw new CreateStateError("State name was not provided");
         }
-        __classPrivateFieldGet(this, _states)[name] = new BpdState(name, initialValue, performer, config !== null && config !== void 0 ? config : __classPrivateFieldGet(this, _config));
+        __classPrivateFieldGet(this, _states)[name] = new BpdState(name, initialValue, mutationHandler, config !== null && config !== void 0 ? config : __classPrivateFieldGet(this, _config));
     }
     removeState(name) {
         this.executeIfValid(name, "Perform", (state) => {
@@ -79,11 +79,11 @@ export class BpdStateManager {
     static createStateManager(config) {
         window.$bdpStateManager = new BpdStateManagerFactory(config);
     }
-    static createState(name, initialValue, performer, config) {
+    static createState(name, initialValue, mutationHandler, config) {
         if (!is(window.$bdpStateManager)) {
             throw new StateManagerShorthandError("createState", "Manager must be initialized first with createStateManager");
         }
-        window.$bdpStateManager.createState(name, initialValue, performer, config);
+        window.$bdpStateManager.createState(name, initialValue, mutationHandler, config);
     }
     static removeState(name) {
         if (!is(window.$bdpStateManager)) {

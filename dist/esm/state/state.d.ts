@@ -1,4 +1,4 @@
-import { BpdStateAction, BpdStateManagerConfig, StatePerformer } from "../interfaces";
+import { BpdStateAction, BpdStateManagerConfig, StateMutationHandler } from "../interfaces";
 export interface IBpdState<VState, PAction> {
     perform(action: BpdStateAction<PAction>, callback?: (state: VState) => void | undefined): void;
     subscribe(callback: (state: VState) => void): string | undefined;
@@ -8,11 +8,30 @@ export interface IBpdState<VState, PAction> {
 }
 export declare class BpdState<VState, PAction> implements IBpdState<VState, PAction> {
     #private;
-    constructor(id: string, init: VState, performer: StatePerformer<PAction, VState>, config?: BpdStateManagerConfig<VState>);
+    constructor(id: string, init: VState, mutationHandler: StateMutationHandler<PAction, VState>, config?: BpdStateManagerConfig<VState>);
+    /**
+     * Performs an action on the state
+     * @param action - action to be performed
+     * @param callback - optional - subscription callback for one time execution
+     */
     perform(action: BpdStateAction<PAction>, callback?: (state: VState) => void): void;
+    /**
+     * Attaches new subscriber to state
+     * @param callback Function to be assigned to subscriber
+     */
     subscribe(callback: (state: VState) => void): string | undefined;
+    /**
+     * Removes subscriber from the state
+     * @param id subscription identifier
+     */
     unsubscribe(id: string): boolean;
+    /**
+     * Returns current state
+     */
     getState(): VState;
+    /**
+     * Performs undo on state
+     */
     undo(): void;
     /**
      * Callback invoked by a worker when state change perform is completed

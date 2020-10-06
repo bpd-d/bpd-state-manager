@@ -31,5 +31,8 @@ export class StateBackup {
         }
         return undefined;
     }
+    length() {
+        return __classPrivateFieldGet(this, _states).length;
+    }
 }
 _states = new WeakMap(), _maxCount = new WeakMap();

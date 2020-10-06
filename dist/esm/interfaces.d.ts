@@ -15,7 +15,7 @@ export interface BpdStateManagerConfig<V> {
     onError?: BpdStateOnError;
     copyMaker?: IObjectCopyMaker<V>;
 }
-export interface StatePerformer<V, P> {
+export interface StateMutationHandler<V, P> {
     (state: P, action: BpdStateAction<V>): P;
 }
 export interface BpdManagedStates<VStates, TActions> {

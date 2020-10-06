@@ -1,6 +1,6 @@
-import { BpdStateManagerConfig, StatePerformer, BpdStateAction } from "./interfaces";
+import { BpdStateManagerConfig, StateMutationHandler, BpdStateAction } from "./interfaces";
 import { IBpdState } from "./state/state";
-export declare const VERSION_INFO = "0.1.1";
+export declare const VERSION_INFO = "0.1.3";
 declare global {
     interface Window {
         $bdpStateManager: any;
@@ -9,7 +9,7 @@ declare global {
 export declare class BpdStateManagerFactory<VStates, TActions> {
     #private;
     constructor(config?: BpdStateManagerConfig<VStates>);
-    createState(name: string, initialValue: VStates, performer: StatePerformer<TActions, VStates>, config?: BpdStateManagerConfig<VStates>): void;
+    createState(name: string, initialValue: VStates, mutationHandler: StateMutationHandler<TActions, VStates>, config?: BpdStateManagerConfig<VStates>): void;
     removeState(name: string): void;
     getState(name: string): IBpdState<VStates, TActions> | undefined;
     perform(name: string, action: BpdStateAction<TActions>, callback?: (state: VStates) => void): void;
@@ -20,7 +20,7 @@ export declare class BpdStateManagerFactory<VStates, TActions> {
 }
 export declare class BpdStateManager {
     static createStateManager<VStates, TActions>(config?: BpdStateManagerConfig<VStates>): void;
-    static createState<VStates, TActions>(name: string, initialValue: VStates, performer: StatePerformer<TActions, VStates>, config?: BpdStateManagerConfig<VStates>): void;
+    static createState<VStates, TActions>(name: string, initialValue: VStates, mutationHandler: StateMutationHandler<TActions, VStates>, config?: BpdStateManagerConfig<VStates>): void;
     static removeState<VStates, TActions>(name: string): void;
     static getState<VStates, TActions>(name: string): IBpdState<VStates, TActions>;
     static performStateAction<VStates, TActions>(name: string, action: BpdStateAction<TActions>, callback?: (state: VStates) => void): void;

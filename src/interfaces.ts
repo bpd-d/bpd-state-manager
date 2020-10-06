@@ -21,7 +21,7 @@ export interface BpdStateManagerConfig<V> {
     copyMaker?: IObjectCopyMaker<V>;
 }
 
-export interface StatePerformer<V, P> {
+export interface StateMutationHandler<V, P> {
     (state: P, action: BpdStateAction<V>): P;
 }
 
