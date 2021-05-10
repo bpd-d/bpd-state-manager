@@ -1,4 +1,4 @@
-import { BpdStateManagerFactory } from "../src"
+import { BpdStateManagerFactory } from "../src/core";
 import { getSimpleAction } from "./helpers/actions";
 import { sleep } from "./helpers/functions";
 

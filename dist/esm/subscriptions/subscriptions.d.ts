@@ -14,7 +14,10 @@ export interface ISubscriptionsManager<VState> {
     getSubscribers(): Subscriber<VState>[];
 }
 export declare class SubscriptionsManager<VState> implements ISubscriptionsManager<VState> {
-    #private;
+    private _subscribers;
+    private _onError;
+    private _counter;
+    private _id;
     constructor(id: string);
     subscribe(callback: (state: VState) => void, options?: SubscriberOptions): string;
     unsubscribe(subscribtionId: string): void;

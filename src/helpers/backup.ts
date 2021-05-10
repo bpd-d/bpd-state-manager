@@ -5,27 +5,27 @@ export interface IStateBackup<VState> {
 }
 
 export class StateBackup<VState> implements IStateBackup<VState> {
-    #states: VState[];
-    #maxCount: number;
+    _states: VState[];
+    _maxCount: number;
     constructor() {
-        this.#states = [];
-        this.#maxCount = 20
+        this._states = [];
+        this._maxCount = 20
     }
     push(v: VState): void {
-        if (this.#states.length >= this.#maxCount) {
-            this.#states.shift();
+        if (this._states.length >= this._maxCount) {
+            this._states.shift();
         }
-        this.#states.push(v);
+        this._states.push(v);
     }
     undo(): VState | undefined {
-        if (this.#states.length > 0) {
-            return this.#states.pop();
+        if (this._states.length > 0) {
+            return this._states.pop();
         }
         return undefined;
     }
 
     length(): number {
-        return this.#states.length;
+        return this._states.length;
     }
 
 }

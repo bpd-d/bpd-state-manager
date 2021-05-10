@@ -7,7 +7,14 @@ export interface IBpdState<VState, PAction> {
     undo(): void;
 }
 export declare class BpdState<VState, PAction> implements IBpdState<VState, PAction> {
-    #private;
+    private _state;
+    private _backup;
+    private _id;
+    private _config;
+    private _worker;
+    private _mutationHandler;
+    private _subscriptionManager;
+    private _copyMaker;
     constructor(id: string, init: VState, mutationHandler: StateMutationHandler<PAction, VState>, config?: BpdStateManagerConfig<VState>);
     /**
      * Performs an action on the state

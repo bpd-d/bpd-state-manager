@@ -4,7 +4,8 @@ export interface IStateBackup<VState> {
     length(): number;
 }
 export declare class StateBackup<VState> implements IStateBackup<VState> {
-    #private;
+    _states: VState[];
+    _maxCount: number;
     constructor();
     push(v: VState): void;
     undo(): VState | undefined;

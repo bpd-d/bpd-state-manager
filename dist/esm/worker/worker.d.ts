@@ -15,7 +15,12 @@ export interface IBpdStateWorker<V, P> {
     onError(callback: OnErrorCallback<V>): void;
 }
 export declare class BpdStateWorker<V, P> implements IBpdStateWorker<V, P> {
-    #private;
+    private _queue;
+    private _queuelock;
+    private _lock;
+    private _onPerform;
+    private _onUpdate;
+    private _onError;
     constructor();
     onPerform(callback: OnPerformCallback<V, P>): void;
     onUpdate(callback: OnUpdateCallback<V, P>): void;

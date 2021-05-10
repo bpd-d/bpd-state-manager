@@ -22,78 +22,78 @@ export interface IBpdStateWorker<V, P> {
 }
 
 export class BpdStateWorker<V, P> implements IBpdStateWorker<V, P> {
-    #queue: BpdStateAction<V>[];
-    #queuelock: boolean;
-    #lock: boolean;
-    #onPerform: OnPerformCallback<V, P> | undefined;
-    #onUpdate: OnUpdateCallback<V, P> | undefined;
-    #onError: OnErrorCallback<V> | undefined;
+    private _queue: BpdStateAction<V>[];
+    private _queuelock: boolean;
+    private _lock: boolean;
+    private _onPerform: OnPerformCallback<V, P> | undefined;
+    private _onUpdate: OnUpdateCallback<V, P> | undefined;
+    private _onError: OnErrorCallback<V> | undefined;
     constructor() {
-        this.#queue = [];
-        this.#lock = false;
-        this.#queuelock = false;
-        this.#onError = undefined;
-        this.#onPerform = undefined;
-        this.#onUpdate = undefined;
+        this._queue = [];
+        this._lock = false;
+        this._queuelock = false;
+        this._onError = undefined;
+        this._onPerform = undefined;
+        this._onUpdate = undefined;
 
     }
 
     onPerform(callback: OnPerformCallback<V, P>) {
-        this.#onPerform = callback;
+        this._onPerform = callback;
     }
 
     onUpdate(callback: OnUpdateCallback<V, P>) {
-        this.#onUpdate = callback;
+        this._onUpdate = callback;
     }
 
     onError(callback: OnErrorCallback<V>) {
-        this.#onError = callback;
+        this._onError = callback;
     }
 
     perform(action: BpdStateAction<V>) {
         if (!is(action)) {
             throw new IncorrectDataError("Inproper action object passed to worker")
         }
-        if (!is(this.#onPerform) || !is(this.#onUpdate)) {
+        if (!is(this._onPerform) || !is(this._onUpdate)) {
             throw new WorkerNotReadyError("Callbacks are not set");
         }
         if (!this.isInQueue(action)) {
-            this.#queue.push(action);
+            this._queue.push(action);
         }
         this.run();
     }
 
     private run() {
-        if (this.#queuelock || this.#lock || !is(this.#queue)) {
+        if (this._queuelock || this._lock || !is(this._queue)) {
             return;
         }
-        this.#lock = true;
-        let current = this.#queue.shift();
+        this._lock = true;
+        let current = this._queue.shift();
         if (!current) {
-            this.#lock = false;
+            this._lock = false;
             this.run();
         }
-        if (this.#onPerform && current) {
-            this.#onPerform(current).then((state: P) => {
-                if (this.#onUpdate) {
-                    this.#onUpdate(state, current);
+        if (this._onPerform && current) {
+            this._onPerform(current).then((state: P) => {
+                if (this._onUpdate) {
+                    this._onUpdate(state, current);
                 }
-                this.#lock = false;
+                this._lock = false;
                 this.run();
             }).catch(e => {
-                if (this.#onError) {
-                    this.#onError(e, current);
+                if (this._onError) {
+                    this._onError(e, current);
                 }
             });
         }
     }
 
     private isInQueue(action: BpdStateAction<V>) {
-        this.#queuelock = true;
-        let index = this.#queue.findIndex(value => {
+        this._queuelock = true;
+        let index = this._queue.findIndex(value => {
             return action.action === value.action && value.data === action.data;
         })
-        this.#queuelock = false;
+        this._queuelock = false;
         return index > -1;
     }
 }

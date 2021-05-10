@@ -11,7 +11,7 @@ export function is(obj: any) {
     return true;
 }
 
-export function* counter() {
+export function* counter(): Generator<number, void, unknown> {
     let idx = 0;
     while (true) {
         let reset = yield idx++;

@@ -13,10 +13,10 @@ module.exports = merge(common, {
             extractComments: false
         })]
     }, output: {
-        filename: '[name].min.js',
+        filename: 'bpdState.[name].min.js',
         path: path.resolve(__dirname, 'dist'),
         libraryTarget: 'umd',
-        library: "bpd-toolkit",
+        library: "bpdState",
         umdNamedDefine: true
     },
 });

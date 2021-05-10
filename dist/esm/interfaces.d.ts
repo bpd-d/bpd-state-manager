@@ -1,4 +1,3 @@
-import { IBpdState } from "./state/state";
 export declare type OnChangeEventType = "action" | "lib";
 export interface BpdStateOnChange<V> {
     (stateId: string, type: OnChangeEventType, detail: string, state: V): void;
@@ -17,9 +16,6 @@ export interface BpdStateManagerConfig<V> {
 }
 export interface StateMutationHandler<V, P> {
     (state: P, action: BpdStateAction<V>): P;
-}
-export interface BpdManagedStates<VStates, TActions> {
-    [id: string]: IBpdState<VStates, TActions>;
 }
 export interface IObjectCopyMaker<V> {
     copy(obj: V): V;

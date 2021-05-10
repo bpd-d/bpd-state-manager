@@ -1,8 +1,6 @@
 'use strict'
 var path = require('path');
 
-const TerserPlugin = require('terser-webpack-plugin');
-const NODE_ENV = process.env.NODE_ENV;
 const setPath = function (folderName) {
     return path.join(__dirname, folderName);
 };
@@ -26,7 +24,8 @@ module.exports = {
         noInfo: false
     },
     entry: {
-        index: './src/index.ts',
+        core: './src/core.ts',
+        hook: './src/hook.ts',
     },
     module: {
         rules: [
@@ -41,13 +40,14 @@ module.exports = {
         extensions: ['.tsx', '.ts', '.js'],
     },
     output: {
-        filename: '[name].js',
+        filename: 'bpdState.[name].js',
         path: path.resolve(__dirname, 'dist'),
         libraryTarget: 'umd',
-        library: "bpd-toolkit",
+        library: "bpdState",
+        globalObject: 'window',
         umdNamedDefine: true
     },
     plugins: [
-        
+
     ]
 };

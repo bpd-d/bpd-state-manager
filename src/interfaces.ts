@@ -25,10 +25,6 @@ export interface StateMutationHandler<V, P> {
     (state: P, action: BpdStateAction<V>): P;
 }
 
-export interface BpdManagedStates<VStates, TActions> {
-    [id: string]: IBpdState<VStates, TActions>;
-}
-
 export interface IObjectCopyMaker<V> {
     copy(obj: V): V;
 }

@@ -24,23 +24,23 @@ export interface ISubscriptionsManager<VState> {
 }
 
 export class SubscriptionsManager<VState> implements ISubscriptionsManager<VState>{
-    #subscribers: Subscriber<VState>[];
-    #onError: ErrorCallback | undefined;
-    #counter: Generator<number, void, unknown>;
-    #id: string;
+    private _subscribers: Subscriber<VState>[];
+    private _onError: ErrorCallback | undefined;
+    private _counter: Generator<number, void, unknown>;
+    private _id: string;
     constructor(id: string) {
         if (!is(id)) {
             throw new IncorrectDataError("Valid Id is required");
         }
-        this.#subscribers = [];
-        this.#id = id;
-        this.#counter = counter();
-        this.#onError = undefined;
+        this._subscribers = [];
+        this._id = id;
+        this._counter = counter();
+        this._onError = undefined;
     }
 
     subscribe(callback: (state: VState) => void, options?: SubscriberOptions): string {
         let subscriber = this.createSubscriber(callback, options);
-        this.#subscribers.push(subscriber);
+        this._subscribers.push(subscriber);
         return subscriber.id;
     }
 
@@ -48,18 +48,18 @@ export class SubscriptionsManager<VState> implements ISubscriptionsManager<VStat
         if (!is(subscribtionId)) {
             return;
         }
-        let index = this.#subscribers.findIndex((subscirber: Subscriber<VState>) => {
+        let index = this._subscribers.findIndex((subscirber: Subscriber<VState>) => {
             return subscirber.id === subscribtionId;
         })
         if (index < 0) {
             return;
         }
-        this.#subscribers.splice(index, 1);
+        this._subscribers.splice(index, 1);
     }
 
     async notify(state: VState): Promise<boolean> {
         let toRemove: string[] = []
-        this.#subscribers.forEach(sub => {
+        this._subscribers.forEach(sub => {
             if (sub.options && sub.options.singleRun) {
                 toRemove.push(sub.id);
             }
@@ -67,8 +67,8 @@ export class SubscriptionsManager<VState> implements ISubscriptionsManager<VStat
                 sub.callback(state);
             } catch (e) {
                 toRemove.push(sub.id);
-                if (this.#onError) {
-                    this.#onError(e);
+                if (this._onError) {
+                    this._onError(e);
                 }
             }
         })
@@ -77,11 +77,11 @@ export class SubscriptionsManager<VState> implements ISubscriptionsManager<VStat
     }
 
     onError(callback: (e: Error) => void) {
-        this.#onError = callback;
+        this._onError = callback;
     }
 
     getSubscribers(): Subscriber<VState>[] {
-        return [...this.#subscribers];
+        return [...this._subscribers];
     }
 
     private createSubscriber(callback: (state: VState) => void, options?: SubscriberOptions): Subscriber<VState> {
@@ -93,6 +93,6 @@ export class SubscriptionsManager<VState> implements ISubscriptionsManager<VStat
     }
 
     private generateId(): string {
-        return `${this.#id}:${this.#counter.next().value}`;
+        return `${this._id}:${this._counter.next().value}`;
     }
 }

@@ -17,14 +17,14 @@ export interface IBpdState<VState, PAction> {
 }
 
 export class BpdState<VState, PAction> implements IBpdState<VState, PAction> {
-    #state: VState;
-    #backup: IStateBackup<VState>;
-    #id: string;
-    #config: BpdStateManagerConfig<VState>;
-    #worker: IBpdStateWorker<PAction, VState>;
-    #mutationHandler: StateMutationHandler<PAction, VState>;
-    #subscriptionManager: ISubscriptionsManager<VState>;
-    #copyMaker: IObjectCopyMaker<VState>;
+    private _state: VState;
+    private _backup: IStateBackup<VState>;
+    private _id: string;
+    private _config: BpdStateManagerConfig<VState>;
+    private _worker: IBpdStateWorker<PAction, VState>;
+    private _mutationHandler: StateMutationHandler<PAction, VState>;
+    private _subscriptionManager: ISubscriptionsManager<VState>;
+    private _copyMaker: IObjectCopyMaker<VState>;
 
     constructor(id: string, init: VState, mutationHandler: StateMutationHandler<PAction, VState>, config?: BpdStateManagerConfig<VState>) {
         if (!is(id)) {
@@ -36,18 +36,18 @@ export class BpdState<VState, PAction> implements IBpdState<VState, PAction> {
         if (!is(mutationHandler)) {
             throw new InitStateError("Perfromer callback was not provided")
         }
-        this.#id = id;
-        this.#state = init;
-        this.#config = config ?? {};
-        this.#mutationHandler = mutationHandler;
-        this.#worker = new BpdStateWorker<PAction, VState>();
-        this.#worker.onUpdate(this.onWorkerChange.bind(this))
-        this.#worker.onPerform(this.onWorkerPerform.bind(this));
-        this.#worker.onError(this.onWorkerError.bind(this));
-        this.#subscriptionManager = new SubscriptionsManager(this.#id);
-        this.#subscriptionManager.onError(this.onSubscriberError.bind(this));
-        this.#copyMaker = this.#config.copyMaker ?? new ObjectCopyMaker();
-        this.#backup = new StateBackup();
+        this._id = id;
+        this._state = init;
+        this._config = config ?? {};
+        this._mutationHandler = mutationHandler;
+        this._worker = new BpdStateWorker<PAction, VState>();
+        this._worker.onUpdate(this.onWorkerChange.bind(this))
+        this._worker.onPerform(this.onWorkerPerform.bind(this));
+        this._worker.onError(this.onWorkerError.bind(this));
+        this._subscriptionManager = new SubscriptionsManager(this._id);
+        this._subscriptionManager.onError(this.onSubscriberError.bind(this));
+        this._copyMaker = this._config.copyMaker ?? new ObjectCopyMaker();
+        this._backup = new StateBackup();
     }
 
     /**
@@ -60,11 +60,11 @@ export class BpdState<VState, PAction> implements IBpdState<VState, PAction> {
             this.reportError("lib", "In proper action object", new IncorrectDataError("In proper action object"))
         }
         if (callback) {
-            this.#subscriptionManager.subscribe(callback, {
+            this._subscriptionManager.subscribe(callback, {
                 singleRun: true
             })
         }
-        this.#worker.perform(action);
+        this._worker.perform(action);
     }
 
     /**
@@ -76,7 +76,7 @@ export class BpdState<VState, PAction> implements IBpdState<VState, PAction> {
             this.reportError("lib", "", new IncorrectDataError("Callback has not been set"))
             return undefined;
         }
-        return this.#subscriptionManager.subscribe(callback)
+        return this._subscriptionManager.subscribe(callback)
     }
 
     /**
@@ -87,7 +87,7 @@ export class BpdState<VState, PAction> implements IBpdState<VState, PAction> {
         if (!is(id)) {
             return false;
         }
-        this.#subscriptionManager.unsubscribe(id);
+        this._subscriptionManager.unsubscribe(id);
         return true;
     }
 
@@ -95,14 +95,14 @@ export class BpdState<VState, PAction> implements IBpdState<VState, PAction> {
      * Returns current state
      */
     getState(): VState {
-        return this.#copyMaker.copy(this.#state);
+        return this._copyMaker.copy(this._state);
     }
 
     /**
      * Performs undo on state
      */
     undo(): void {
-        this.#worker.perform({ action: UNDO_ACTION_NAME });
+        this._worker.perform({ action: UNDO_ACTION_NAME });
     }
 
     /**
@@ -115,7 +115,7 @@ export class BpdState<VState, PAction> implements IBpdState<VState, PAction> {
         if (action && action.action === UNDO_ACTION_NAME) {
             this.assignStateAndNotify(state, "lib", "Undo from backup");
         } else {
-            this.#backup.push(this.#copyMaker.copy(this.#state));
+            this._backup.push(this._copyMaker.copy(this._state));
             this.assignStateAndNotify(state, "action", action ? action.action : "");
         }
     }
@@ -127,13 +127,13 @@ export class BpdState<VState, PAction> implements IBpdState<VState, PAction> {
     private onWorkerPerform(action: BpdStateAction<PAction>) {
         if (action && action.action === UNDO_ACTION_NAME) {
             return new Promise<VState>((resolve) => {
-                let lastValue = this.#backup.undo();
-                resolve(lastValue ?? this.#copyMaker.copy(this.#state));
+                let lastValue = this._backup.undo();
+                resolve(lastValue ?? this._copyMaker.copy(this._state));
             })
         }
 
         return new Promise<VState>((resolve) => {
-            resolve(this.#mutationHandler(this.#copyMaker.copy(this.#state), action));
+            resolve(this._mutationHandler(this._copyMaker.copy(this._state), action));
         })
     }
 
@@ -146,20 +146,20 @@ export class BpdState<VState, PAction> implements IBpdState<VState, PAction> {
     }
 
     private reportError(type: OnChangeEventType, detail: string, e: Error) {
-        if (this.#config && this.#config.onError) {
-            this.#config.onError(this.#id, type, e, detail)
+        if (this._config && this._config.onError) {
+            this._config.onError(this._id, type, e, detail)
         }
     }
 
     private reportChange(type: OnChangeEventType, detail: string) {
-        if (this.#config && this.#config.onChange) {
-            this.#config.onChange(this.#id, type, detail, this.#state)
+        if (this._config && this._config.onChange) {
+            this._config.onChange(this._id, type, detail, this._state)
         }
     }
 
     private assignStateAndNotify(state: VState, type: OnChangeEventType, detail: string) {
-        this.#state = this.#copyMaker.copy(state);
-        this.#subscriptionManager.notify(state)
+        this._state = this._copyMaker.copy(state);
+        this._subscriptionManager.notify(state)
             .then((result) => {
                 this.reportChange(type, detail)
             })
